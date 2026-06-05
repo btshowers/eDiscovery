@@ -83,6 +83,47 @@ New-MgServicePrincipal -BodyParameter $spId
   - Select `Grant admin consent`.
 
 5. Create/enable the app service principal in Purview permissions and assign roles.
+  - If your app registration does not yet have an Enterprise Application object in the tenant, create the app service principal from the app registration client ID:
+
+```powershell
+Connect-MgGraph -Scopes "Application.ReadWrite.All"
+
+$appClientId = "<Application (client) ID from your app registration>"
+$appSp = Get-MgServicePrincipal -Filter "appId eq '$appClientId'"
+
+if (-not $appSp) {
+    $appSp = New-MgServicePrincipal -BodyParameter @{ AppId = $appClientId }
+}
+
+$appSp | Format-List Id,AppId,DisplayName
+```
+
+  - The `Id` returned above is the service principal object ID used for role assignment workflows.
+  - Assign the app service principal in Purview (Security & Compliance PowerShell):
+
+```powershell
+Install-Module ExchangeOnlineManagement -Scope CurrentUser
+Import-Module ExchangeOnlineManagement
+Connect-IPPSSession
+
+# Values from your app registration + enterprise app
+$appClientId = "<Application (client) ID>"
+$appObjectId = "<Enterprise Application Object ID>"
+$displayName = "<Display Name>"
+
+# Register the service principal inside Purview permissions model
+New-ServicePrincipal -AppId $appClientId -ObjectId $appObjectId -DisplayName $displayName
+Get-ServicePrincipal | Where-Object { $_.AppId -eq $appClientId }
+
+# Assign eDiscovery roles
+Add-RoleGroupMember -Identity "eDiscoveryManager" -Member $appObjectId
+Get-RoleGroupMember -Identity "eDiscoveryManager"
+
+Add-eDiscoveryCaseAdmin -User $appObjectId
+Get-eDiscoveryCaseAdmin
+```
+
+  - If `New-ServicePrincipal` reports it already exists, continue with the role assignment commands.
   - Use Microsoft Purview permissions to assign the app to an eDiscovery role group that includes export/download capabilities.
   - At minimum, assign a role group appropriate for export workflows (commonly eDiscovery Manager, or a custom role group with equivalent permissions).
   - Ensure the admin doing role assignment has `Role Management` in Purview.
