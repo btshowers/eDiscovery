@@ -4,3 +4,5 @@ local.settings.json
 bin/
 obj/
 *.log
+/cases.live.json
+/state.json
