@@ -1,0 +1,6 @@
+.venv/
+.env
+local.settings.json
+bin/
+obj/
+*.log

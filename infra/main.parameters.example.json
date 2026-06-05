@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "namePrefix": {
+      "value": "ediscdemo"
+    },
+    "tenantId": {
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    "clientId": {
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    "clientSecret": {
+      "value": "REPLACE_ME"
+    },
+    "useKeyVaultReference": {
+      "value": true
+    },
+    "keyVaultSecretName": {
+      "value": "purview-client-secret"
+    },
+    "timerSchedule": {
+      "value": "0 */30 * * * *"
+    }
+  }
+}

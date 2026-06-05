@@ -1,0 +1,21 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "powershell",
+    "TIMER_SCHEDULE": "0 */30 * * * *",
+    "TENANT_ID": "<tenant-id>",
+    "CLIENT_ID": "<app-id>",
+    "CLIENT_SECRET": "<app-secret>",
+    "CONFIG_CONTAINER": "ediscovery-config",
+    "CONFIG_BLOB_NAME": "cases.json",
+    "STATE_CONTAINER": "ediscovery-state",
+    "STATE_BLOB_NAME": "state.json",
+    "EXPORTS_CONTAINER": "exports",
+    "GRAPH_SCOPE": "https://graph.microsoft.com/.default",
+    "PURVIEW_SCOPE": "https://api.purview.microsoft.com/.default",
+    "PURVIEW_DOWNLOAD_SCOPE": "https://api.security.microsoft.com/.default",
+    "EDISCOVERY_APP_SCOPE": "",
+    "EXPORT_DOWNLOAD_SCOPE": ""
+  }
+}

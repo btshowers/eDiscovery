@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "caseName": "HR Investigation 2026",
+      "enabled": true
+    },
+    {
+      "caseName": "FIN 2026-04",
+      "enabled": true
+    }
+  ]
+}
