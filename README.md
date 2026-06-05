@@ -47,6 +47,55 @@ Required app permissions:
 - MicrosoftPurviewEDiscovery (application): `eDiscovery.Download.Read`
 - Admin consent granted
 
+Step-by-step setup (based on Microsoft guidance):
+
+1. Register your app in Microsoft Entra ID.
+  - Portal: Entra ID > App registrations > New registration.
+  - Record values for:
+    - `Application (client) ID`
+    - `Directory (tenant) ID`
+  - Create either:
+    - a client secret (Certificates & secrets), or
+    - a certificate credential.
+
+2. Assign Microsoft Graph application permissions to your app.
+  - Portal: App registrations > your app > API permissions > Add a permission > Microsoft Graph > Application permissions.
+  - Add:
+    - `eDiscovery.Read.All` (minimum), or
+    - `eDiscovery.ReadWrite.All` (if write operations are required).
+  - Select `Grant admin consent`.
+
+3. Register the Microsoft Purview eDiscovery first-party service principal in your tenant.
+  - This registers app ID `b26e684c-5068-4120-a679-64a5d2c909d9` (MicrosoftPurviewEDiscovery) in Enterprise Applications.
+  - Example PowerShell:
+
+```powershell
+Connect-MgGraph -Scopes "Application.ReadWrite.All"
+$spId = @{ AppId = "b26e684c-5068-4120-a679-64a5d2c909d9" }
+New-MgServicePrincipal -BodyParameter $spId
+```
+
+4. Add MicrosoftPurviewEDiscovery API permission to your app.
+  - Portal: App registrations > your app > API permissions > Add a permission > APIs my organization uses.
+  - Search and select `MicrosoftPurviewEDiscovery`.
+  - Choose `Application permissions`.
+  - Add `eDiscovery.Download.Read`.
+  - Select `Grant admin consent`.
+
+5. Create/enable the app service principal in Purview permissions and assign roles.
+  - Use Microsoft Purview permissions to assign the app to an eDiscovery role group that includes export/download capabilities.
+  - At minimum, assign a role group appropriate for export workflows (commonly eDiscovery Manager, or a custom role group with equivalent permissions).
+  - Ensure the admin doing role assignment has `Role Management` in Purview.
+
+6. Configure function settings with the app identity.
+  - Set `TENANT_ID`, `CLIENT_ID`, and `CLIENT_SECRET` (or certificate-based equivalent).
+  - Keep `EDISCOVERY_APP_SCOPE` as `b26e684c-5068-4120-a679-64a5d2c909d9/.default` when using app-only export download.
+
+Reference:
+
+- https://learn.microsoft.com/en-us/purview/edisc-ref-api-guide#microsoft-purview-ediscovery-api
+- https://learn.microsoft.com/en-us/graph/security-ediscovery-appauthsetup
+
 Required API usage:
 
 - `GET /security/cases/ediscoveryCases`
