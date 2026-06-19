@@ -2,6 +2,7 @@ param($Timer)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$script:aria2Executable = $null
 
 function Get-TempDir {
     $t = [Environment]::GetEnvironmentVariable('TEMP')
@@ -393,6 +394,16 @@ function Get-Aria2Executable {
         return $script:aria2Executable
     }
 
+    try {
+        $cmd = Get-Command 'aria2c' -ErrorAction Stop
+        if ($null -ne $cmd -and -not [string]::IsNullOrWhiteSpace([string]$cmd.Source)) {
+            $script:aria2Executable = [string]$cmd.Source
+            return $script:aria2Executable
+        }
+    }
+    catch {
+    }
+
     function Install-Aria2IfNeeded {
         param([string]$TargetPath)
 
@@ -469,6 +480,16 @@ function Get-Aria2Executable {
             return $script:aria2Executable
         }
 
+        try {
+            $cmd = Get-Command 'aria2c' -ErrorAction Stop
+            if ($null -ne $cmd -and -not [string]::IsNullOrWhiteSpace([string]$cmd.Source)) {
+                $script:aria2Executable = [string]$cmd.Source
+                return $script:aria2Executable
+            }
+        }
+        catch {
+        }
+
         $installedPath = Install-Aria2IfNeeded -TargetPath $configuredPath
         if (-not [string]::IsNullOrWhiteSpace($installedPath) -and (Test-Path $installedPath)) {
             $script:aria2Executable = $installedPath
@@ -476,16 +497,6 @@ function Get-Aria2Executable {
         }
 
         Write-Warning ("ARIA2C_PATH is set but file was not found: {0}" -f $configuredPath)
-    }
-
-    try {
-        $cmd = Get-Command 'aria2c' -ErrorAction Stop
-        if ($null -ne $cmd -and -not [string]::IsNullOrWhiteSpace([string]$cmd.Source)) {
-            $script:aria2Executable = [string]$cmd.Source
-            return $script:aria2Executable
-        }
-    }
-    catch {
     }
 
     $installedDefault = Install-Aria2IfNeeded -TargetPath '/tmp/aria2c'

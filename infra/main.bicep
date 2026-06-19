@@ -81,7 +81,7 @@ var functionAppName = toLower('${namePrefix}-func')
 var appInsightsName = '${namePrefix}-appi'
 var planName = '${namePrefix}-plan'
 var keyVaultName = take(toLower('${namePrefix}-${take(unique, 8)}-kv'), 24)
-var clientSecretSettingValue = useKeyVaultReference ? '@Microsoft.KeyVault(SecretUri=${clientSecretSecret!.properties.secretUriWithVersion})' : clientSecret
+var clientSecretSettingValue = useKeyVaultReference ? '@Microsoft.KeyVault(SecretUri=${clientSecretSecret!.properties.secretUri})' : clientSecret
 
 resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: storageAccountName

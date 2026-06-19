@@ -169,6 +169,8 @@ Optional settings:
 - `EDISCOVERY_APP_SCOPE` (optional, no default)
 - `EXPORT_DOWNLOAD_SCOPE` (optional, no default)
 - `ARIA2C_PATH` (optional, full path to `aria2c` executable; when set and valid, downloads use aria2c for parallel chunked transfer)
+- `ARIA2_AUTO_INSTALL` (optional, default disabled; set to `true`/`1` to allow runtime download/install of aria2c when no executable is found)
+- `ARIA2_DOWNLOAD_URL` (optional; override source URL used when `ARIA2_AUTO_INSTALL` is enabled)
 
 For production, use Function App settings and Key Vault references for `CLIENT_SECRET`.
 
@@ -177,6 +179,8 @@ For production, use Function App settings and Key Vault references for `CLIENT_S
 The function supports a fast path that uses `aria2c` for export package downloads.
 
 - If `aria2c` is discoverable in `PATH`, or `ARIA2C_PATH` points to a valid binary, the function uses aria2c.
+- If `ARIA2C_PATH` is set but missing, the function still prefers a system `aria2c` from `PATH` before attempting auto-install.
+- Auto-install runs only when `ARIA2_AUTO_INSTALL` is explicitly enabled and no usable `aria2c` executable is found.
 - Otherwise, it automatically falls back to the built-in HttpClient downloader.
 
 Example app setting:
