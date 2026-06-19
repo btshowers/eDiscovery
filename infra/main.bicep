@@ -53,6 +53,15 @@ param purviewScope string = 'https://api.purview.microsoft.com/.default'
 @description('OAuth scope for MicrosoftPurviewEDiscovery app (required for GCC proxy download). Set to b26e684c-5068-4120-a679-64a5d2c909d9/.default and grant eDiscovery.Download.Read with admin consent.')
 param ediscoveryAppScope string = 'b26e684c-5068-4120-a679-64a5d2c909d9/.default'
 
+@description('When true, function runtime attempts to auto-install aria2c if not already present.')
+param aria2AutoInstall bool = true
+
+@description('Path used by the function to locate/install aria2c.')
+param aria2cPath string = '/tmp/aria2c'
+
+@description('Download URL for Linux aria2c archive used during auto-install.')
+param aria2DownloadUrl string = 'https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0-linux-gnu-64bit-build1.tar.gz'
+
 @allowed([
   512
   2048
@@ -243,6 +252,18 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'EDISCOVERY_APP_SCOPE'
           value: ediscoveryAppScope
+        }
+        {
+          name: 'ARIA2_AUTO_INSTALL'
+          value: string(aria2AutoInstall)
+        }
+        {
+          name: 'ARIA2C_PATH'
+          value: aria2cPath
+        }
+        {
+          name: 'ARIA2_DOWNLOAD_URL'
+          value: aria2DownloadUrl
         }
       ]
     }

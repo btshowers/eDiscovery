@@ -393,10 +393,85 @@ function Get-Aria2Executable {
         return $script:aria2Executable
     }
 
+    function Install-Aria2IfNeeded {
+        param([string]$TargetPath)
+
+        $autoInstall = [Environment]::GetEnvironmentVariable('ARIA2_AUTO_INSTALL')
+        if ([string]::IsNullOrWhiteSpace($autoInstall) -or @('1', 'true', 'yes', 'on') -notcontains $autoInstall.Trim().ToLowerInvariant()) {
+            return $null
+        }
+
+        if ([string]::IsNullOrWhiteSpace($TargetPath)) {
+            $TargetPath = [Environment]::GetEnvironmentVariable('ARIA2C_PATH')
+        }
+        if ([string]::IsNullOrWhiteSpace($TargetPath)) {
+            $TargetPath = '/tmp/aria2c'
+        }
+
+        if (Test-Path $TargetPath) {
+            return $TargetPath
+        }
+
+        $downloadUrl = [Environment]::GetEnvironmentVariable('ARIA2_DOWNLOAD_URL')
+        if ([string]::IsNullOrWhiteSpace($downloadUrl)) {
+            $downloadUrl = 'https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0-linux-gnu-64bit-build1.tar.gz'
+        }
+
+        $tmpRoot = Join-Path (Get-TempDir) ("aria2-install-{0}" -f ([Guid]::NewGuid().ToString()))
+        $archivePath = Join-Path $tmpRoot 'aria2.tar.gz'
+        $extractPath = Join-Path $tmpRoot 'extract'
+        try {
+            New-Item -ItemType Directory -Path $tmpRoot -Force | Out-Null
+            New-Item -ItemType Directory -Path $extractPath -Force | Out-Null
+
+            Write-Host ("aria2c not found; downloading from {0}" -f $downloadUrl)
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -MaximumRedirection 5 -ErrorAction Stop | Out-Null
+
+            & tar -xzf $archivePath -C $extractPath
+            if ($LASTEXITCODE -ne 0) {
+                throw 'tar extraction failed for aria2 archive.'
+            }
+
+            $aria2File = Get-ChildItem -Path $extractPath -Recurse -File | Where-Object { $_.Name -eq 'aria2c' } | Select-Object -First 1
+            if ($null -eq $aria2File) {
+                throw 'aria2c binary not found in extracted archive.'
+            }
+
+            $targetDir = Split-Path -Parent $TargetPath
+            if (-not (Test-Path $targetDir)) {
+                New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+            }
+
+            Copy-Item -Path $aria2File.FullName -Destination $TargetPath -Force
+            & chmod +x $TargetPath
+            if ($LASTEXITCODE -ne 0) {
+                throw 'chmod +x failed for aria2c binary.'
+            }
+
+            Write-Host ("aria2c installed to {0}" -f $TargetPath)
+            return $TargetPath
+        }
+        catch {
+            Write-Warning ("Failed to auto-install aria2c: {0}" -f $_.Exception.Message)
+            return $null
+        }
+        finally {
+            if (Test-Path $tmpRoot) {
+                Remove-Item -Path $tmpRoot -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+
     $configuredPath = [Environment]::GetEnvironmentVariable('ARIA2C_PATH')
     if (-not [string]::IsNullOrWhiteSpace($configuredPath)) {
         if (Test-Path $configuredPath) {
             $script:aria2Executable = $configuredPath
+            return $script:aria2Executable
+        }
+
+        $installedPath = Install-Aria2IfNeeded -TargetPath $configuredPath
+        if (-not [string]::IsNullOrWhiteSpace($installedPath) -and (Test-Path $installedPath)) {
+            $script:aria2Executable = $installedPath
             return $script:aria2Executable
         }
 
@@ -411,6 +486,12 @@ function Get-Aria2Executable {
         }
     }
     catch {
+    }
+
+    $installedDefault = Install-Aria2IfNeeded -TargetPath '/tmp/aria2c'
+    if (-not [string]::IsNullOrWhiteSpace($installedDefault) -and (Test-Path $installedDefault)) {
+        $script:aria2Executable = $installedDefault
+        return $script:aria2Executable
     }
 
     return $null

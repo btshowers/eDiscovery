@@ -22,7 +22,13 @@ param(
 
     [string]$KeyVaultSecretName = 'purview-client-secret',
 
-    [string]$TimerSchedule = '0 */30 * * * *'
+    [string]$TimerSchedule = '0 */30 * * * *',
+
+    [bool]$Aria2AutoInstall = $true,
+
+    [string]$Aria2cPath = '/tmp/aria2c',
+
+    [string]$Aria2DownloadUrl = 'https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0-linux-gnu-64bit-build1.tar.gz'
 )
 
 Set-StrictMode -Version Latest
@@ -87,6 +93,9 @@ try {
             useKeyVaultReference = @{ value = $UseKeyVaultReference }
             keyVaultSecretName = @{ value = $KeyVaultSecretName }
             timerSchedule = @{ value = $TimerSchedule }
+            aria2AutoInstall = @{ value = $Aria2AutoInstall }
+            aria2cPath = @{ value = $Aria2cPath }
+            aria2DownloadUrl = @{ value = $Aria2DownloadUrl }
         }
     }
 

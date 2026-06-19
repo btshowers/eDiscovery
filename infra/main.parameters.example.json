@@ -22,6 +22,15 @@
     },
     "timerSchedule": {
       "value": "0 */30 * * * *"
+    },
+    "aria2AutoInstall": {
+      "value": true
+    },
+    "aria2cPath": {
+      "value": "/tmp/aria2c"
+    },
+    "aria2DownloadUrl": {
+      "value": "https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0-linux-gnu-64bit-build1.tar.gz"
     }
   }
 }
