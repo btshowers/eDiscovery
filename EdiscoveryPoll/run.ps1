@@ -388,6 +388,97 @@ function Invoke-HttpDownloadToFile {
     }
 }
 
+function Get-Aria2Executable {
+    if ($script:aria2Executable -is [string] -and -not [string]::IsNullOrWhiteSpace($script:aria2Executable)) {
+        return $script:aria2Executable
+    }
+
+    $configuredPath = [Environment]::GetEnvironmentVariable('ARIA2C_PATH')
+    if (-not [string]::IsNullOrWhiteSpace($configuredPath)) {
+        if (Test-Path $configuredPath) {
+            $script:aria2Executable = $configuredPath
+            return $script:aria2Executable
+        }
+
+        Write-Warning ("ARIA2C_PATH is set but file was not found: {0}" -f $configuredPath)
+    }
+
+    try {
+        $cmd = Get-Command 'aria2c' -ErrorAction Stop
+        if ($null -ne $cmd -and -not [string]::IsNullOrWhiteSpace([string]$cmd.Source)) {
+            $script:aria2Executable = [string]$cmd.Source
+            return $script:aria2Executable
+        }
+    }
+    catch {
+    }
+
+    return $null
+}
+
+function Invoke-Aria2DownloadToFile {
+    param(
+        [Parameter(Mandatory = $true)][string]$Aria2Executable,
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Parameter(Mandatory = $true)][hashtable]$Headers,
+        [Parameter(Mandatory = $true)][string]$OutFile
+    )
+
+    $targetDir = Split-Path -Parent $OutFile
+    $targetName = Split-Path -Leaf $OutFile
+
+    if (-not (Test-Path $targetDir)) {
+        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+    }
+
+    $args = @(
+        '--allow-overwrite=true'
+        '--auto-file-renaming=false'
+        '--continue=true'
+        '--file-allocation=none'
+        '--summary-interval=0'
+        '--console-log-level=warn'
+        '--max-tries=4'
+        '--retry-wait=2'
+        '--timeout=60'
+        '--split=16'
+        '--max-connection-per-server=16'
+        '--min-split-size=8M'
+        '--dir', $targetDir,
+        '--out', $targetName
+    )
+
+    foreach ($k in $Headers.Keys) {
+        $v = [string]$Headers[$k]
+        if ([string]::IsNullOrWhiteSpace($v)) {
+            continue
+        }
+
+        $args += @('--header', ("{0}: {1}" -f [string]$k, $v))
+    }
+
+    $args += $Url
+
+    $output = @(& $Aria2Executable @args 2>&1)
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+        $tail = ($output | Select-Object -Last 12) -join "`n"
+        throw ("aria2c failed with exit code {0}. Output: {1}" -f $exitCode, $tail)
+    }
+
+    if (-not (Test-Path $OutFile)) {
+        throw 'aria2c reported success, but output file was not found.'
+    }
+
+    return [pscustomobject]@{
+        StatusCode      = 200
+        ContentType     = $null
+        Location        = $null
+        WwwAuthenticate = $null
+        BodySnippet     = $null
+    }
+}
+
 function Get-HttpErrorBody {
     param([Parameter(Mandatory = $true)]$ErrorRecord)
 
@@ -796,6 +887,10 @@ function Save-UrlToBlob {
 
     try {
         $downloaded = $false
+        $aria2Executable = Get-Aria2Executable
+        if (-not [string]::IsNullOrWhiteSpace($aria2Executable)) {
+            Write-Host ("aria2c detected at: {0}" -f $aria2Executable)
+        }
         $attempts = @()
         $attemptIndex = 0
 
@@ -879,7 +974,13 @@ function Save-UrlToBlob {
 
                 Write-Host ("Downloading export from host {0} using scope {1} (aud={2})." -f $downloadHost, $attempt.Scope, $attempt.Audience)
 
-                $response = Invoke-HttpDownloadToFile -Url $Url -Headers $attempt.Headers -OutFile $tmp
+                $response = $null
+                if (-not [string]::IsNullOrWhiteSpace($aria2Executable)) {
+                    $response = Invoke-Aria2DownloadToFile -Aria2Executable $aria2Executable -Url $Url -Headers $attempt.Headers -OutFile $tmp
+                }
+                else {
+                    $response = Invoke-HttpDownloadToFile -Url $Url -Headers $attempt.Headers -OutFile $tmp
+                }
                 $statusCode = [int]$response.StatusCode
 
                 if ($statusCode -ge 200 -and $statusCode -lt 300) {

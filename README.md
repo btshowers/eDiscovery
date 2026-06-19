@@ -168,8 +168,27 @@ Optional settings:
 - `PURVIEW_DOWNLOAD_SCOPE` (default: `https://api.security.microsoft.com/.default`)
 - `EDISCOVERY_APP_SCOPE` (optional, no default)
 - `EXPORT_DOWNLOAD_SCOPE` (optional, no default)
+- `ARIA2C_PATH` (optional, full path to `aria2c` executable; when set and valid, downloads use aria2c for parallel chunked transfer)
 
 For production, use Function App settings and Key Vault references for `CLIENT_SECRET`.
+
+### Optional download acceleration with aria2c
+
+The function supports a fast path that uses `aria2c` for export package downloads.
+
+- If `aria2c` is discoverable in `PATH`, or `ARIA2C_PATH` points to a valid binary, the function uses aria2c.
+- Otherwise, it automatically falls back to the built-in HttpClient downloader.
+
+Example app setting:
+
+```text
+ARIA2C_PATH=/home/site/wwwroot/tools/aria2c
+```
+
+Notes:
+
+- Include the `aria2c` binary in your deployment package (for Linux Function Apps, use a Linux-compatible executable).
+- The downloader uses parallel split settings (`--split=16`, `--max-connection-per-server=16`) tuned for large export files.
 
 This repo now supports Key Vault reference mode by default in IaC.
 
